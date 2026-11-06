@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="da" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kettingvej 28 — Radonsikring & Byggeteknisk 3D-Model</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js & OrbitControls CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            cad: {
+              900: '#0c111d',
+              800: '#161f33',
+              700: '#1f2d4a',
+              border: '#2a3b61',
+              accent: '#38bdf8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0c111d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2a3b61;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+
+    /* Glow utilities */
+    .glow-radon {
+      box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.4);
+    }
+    .glow-safe {
+      box-shadow: 0 0 25px -5px rgba(34, 197, 94, 0.4);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 20px -5px rgba(56, 189, 248, 0.35);
+    }
+
+    /* Range slider styling */
+    input[type=range] {
+      accent-color: #38bdf8;
+    }
+  </style>
+</head>
+
+<body class="h-full flex flex-col overflow-hidden font-sans select-none">
+
+  <!-- TOP NAVIGATION BAR / BIM HEADER -->
+  <header class="h-14 bg-cad-900 border-b border-cad-border flex items-center justify-between px-4 z-20 shrink-0">
+    <div class="flex items-center space-x-3 min-w-0">
+      <div class="w-8 h-8 rounded bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center font-bold text-slate-950 font-mono shadow shrink-0">
+        K28
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center space-x-2">
+          <h1 class="text-xs md:text-sm font-bold tracking-wide text-white uppercase truncate">Kettingvej 28 — Radonsikring & Saneringsmodel</h1>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono hidden sm:inline-block shrink-0">1962 Parcelhus</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 font-mono hidden sm:inline-block shrink-0">Krybekælder</span>
+        </div>
+        <p class="text-[11px] text-slate-400 truncate">Revit-baseret byggeteknisk snitmodel · Siporex letbetondæk · BR18 Radonsikring</p>
+      </div>
+    </div>
+
+    <!-- Quick action buttons -->
+    <div class="flex items-center space-x-2">
+      <!-- Reset button -->
+      <button id="btnReset" class="flex items-center space-x-1 px-3 py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-medium transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>Nulstil</span>
+      </button>
+
+      <!-- Technical Guide Modal Button -->
+      <button id="btnOpenDocs" class="flex items-center space-x-1 px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium shadow-sm transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+        <span>Byggeteknisk Info</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT PANEL: RADONTILTAG & KONTROLPANEL (KOMPAKT TIL SCREENSHOTS) -->
+    <aside class="w-72 md:w-80 bg-cad-900 border-r border-cad-border flex flex-col shrink-0 z-10 shadow-2xl overflow-y-auto">
+      
+      <!-- Panel Header -->
+      <div class="px-3 py-2 border-b border-cad-border bg-gradient-to-r from-cad-900 to-cad-800 shrink-0">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono font-bold uppercase text-sky-400 tracking-wider">Saneringskatalog</span>
+          <span id="activeCountBadge" class="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">0 / 8 aktive</span>
+        </div>
+        <h2 class="text-xs font-bold text-white mt-0.5 leading-tight">Radonsikringstiltag (1962)</h2>
+      </div>
+
+      <!-- Toggles List - Slank og kompakt opsætning -->
+      <div class="p-2 space-y-1.5 flex-1 overflow-y-auto">
+
+        <!-- KATEGORI 1: KRYBEKÆLDER & DÆK -->
+        <div class="text-[9px] font-mono font-bold text-sky-400 uppercase tracking-wider flex items-center justify-between px-0.5">
+          <span>Krybekælder & Dæktiltag</span>
+        </div>
+
+        <!-- Tiltag 1: Sokkelriste -->
+        <div class="px-2 py-1.5 rounded-md bg-cad-800/80 border border-cad-border hover:border-slate-600 transition flex items-center justify-between" id="card-t1">
+          <div class="flex items-center space-x-2 min-w-0 pr-1.5">
+            <span class="w-4 h-4 rounded bg-sky-950 border border-sky-600 text-sky-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">1</span>
+            <div class="truncate">
+              <div class="flex items-center space-x-1.5">
+                <h3 class="text-[11px] font-semibold text-slate-100 truncate">Sokkelriste</h3>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-mono shrink-0">50–70%</span>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate">Naturlig tværventilation i sokkel</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="toggle1" class="sr-only peer">
+            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
+
+        <!-- Tiltag 2: Radonspærre på Siporex -->
+        <div class="px-2 py-1.5 rounded-md bg-cad-800/80 border border-cad-border hover:border-slate-600 transition flex items-center justify-between" id="card-t2">
+          <div class="flex items-center space-x-2 min-w-0 pr-1.5">
+            <span class="w-4 h-4 rounded bg-sky-950 border border-sky-600 text-sky-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">2</span>
+            <div class="truncate">
+              <div class="flex items-center space-x-1.5">
+                <h3 class="text-[11px] font-semibold text-slate-100 truncate">Radonspærre under gulv</h3>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-mono shrink-0">70–85%</span>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate">Forsegler Siporex-svindrevner</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="toggle2" class="sr-only peer">
+            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
+
+        <!-- Tiltag 3: Bunddækning af jord -->
+        <div class="px-2 py-1.5 rounded-md bg-cad-800/80 border border-cad-border hover:border-slate-600 transition flex items-center justify-between" id="card-t3">
+          <div class="flex items-center space-x-2 min-w-0 pr-1.5">
+            <span class="w-4 h-4 rounded bg-sky-950 border border-sky-600 text-sky-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">3</span>
+            <div class="truncate">
+              <div class="flex items-center space-x-1.5">
+                <h3 class="text-[11px] font-semibold text-slate-100 truncate">Bunddækning i krybekælder</h3>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-mono shrink-0">60–75%</span>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate">0,20 mm PE-folie på råjord</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="toggle3" class="sr-only peer">
+            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
+
+        <!-- Tiltag 4: Passivt radonsug -->
+        <div class="px-2 py-1.5 rounded-md bg-cad-800/80 border border-cad-border hover:border-slate-600 transition flex items-center justify-between" id="card-t4">
+          <div class="flex items-center space-x-2 min-w-0 pr-1.5">
+            <span class="w-4 h-4 rounded bg-sky-950 border border-sky-600 text-sky-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">4</span>
+            <div class="truncate">
+              <div class="flex items-center space-x-1.5">
+                <h3 class="text-[11px] font-semibold text-slate-100 truncate">Passivt radonsug</h3>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/10 text-amber-400 font-mono shrink-0">40–60%</span>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate">Ø110 rør over tag m. vindhætte</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="toggle4" class="sr-only peer">
+            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
+
+        <!-- Tiltag 5: Aktivt radonsug -->
+        <div class="px-2 py-1.5 rounded-md bg-cad-800/80 border border-cad-border hover:border-slate-600 transition flex items-center justify-between" id="card-t5">
+          <div class="flex items-center space-x-2 min-w-0 pr-1.5">
+            <span class="w-4 h-4 rounded bg-sky-950 border border-sky-600 text-sky-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">5</span>
+            <div class="truncate">
+              <div class="flex items-center space-x-1.5">
+                <h3 class="text-[11px] font-semibold text-slate-100 truncate">Aktivt mekanisk radonsug</h3>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-mono shrink-0">85–95%</span>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate">Kanalventilator (-18 Pa)</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="toggle5" class="sr-only peer">
+            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
+
+        <!-- SAMLET VENTILATIONSBLOK (3 KATEGORIER) -->
+        <div class="pt-1">
+          <div class="p-2 rounded-lg bg-cyan-950/30 border border-cyan-800/50 space-y-1.5">
+            <div class="flex items-center justify-between text-[9px] font-mono font-bold text-cyan-400 uppercase tracking-wide px-0.5">
+              <div class="flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span>Boligventilation (Stueplan)</span>
+              </div>
+              <span class="text-[8px] text-slate-400 font-normal">Erstatter radon m. udeluft</span>
+            </div>
+
+            <!-- Ventilation 1: Naturlig -->
+            <div class="px-2 py-1 rounded bg-cad-800/90 border border-cad-border hover:border-cyan-500 transition flex items-center justify-between" id="card-t6">
+              <div class="flex items-center space-x-1.5 min-w-0 pr-1">
+                <span class="w-4 h-4 rounded bg-cyan-950 border border-cyan-500 text-cyan-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">V1</span>
+                <div class="truncate">
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[11px] font-semibold text-slate-100 truncate">1: Naturlig ventilation</span>
+                    <span class="text-[8px] px-1 rounded bg-cyan-500/10 text-cyan-400 font-mono">20–35%</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 truncate">Spalteriste i vinduer/døre & væg</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" id="toggle6" class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
+              </label>
+            </div>
+
+            <!-- Ventilation 2: Mekanisk Enkeltrum -->
+            <div class="px-2 py-1 rounded bg-cad-800/90 border border-cad-border hover:border-cyan-500 transition flex items-center justify-between" id="card-t7">
+              <div class="flex items-center space-x-1.5 min-w-0 pr-1">
+                <span class="w-4 h-4 rounded bg-cyan-950 border border-cyan-500 text-cyan-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">V2</span>
+                <div class="truncate">
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[11px] font-semibold text-slate-100 truncate">2: Enkeltrumsventilator</span>
+                    <span class="text-[8px] px-1 rounded bg-cyan-500/10 text-cyan-400 font-mono">35–50%</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 truncate">Decentral vægenhed m. veksler</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" id="toggle7" class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
+              </label>
+            </div>
+
+            <!-- Ventilation 3: Genvex -->
+            <div class="px-2 py-1 rounded bg-cad-800/90 border border-cad-border hover:border-cyan-500 transition flex items-center justify-between" id="card-t8">
+              <div class="flex items-center space-x-1.5 min-w-0 pr-1">
+                <span class="w-4 h-4 rounded bg-cyan-950 border border-cyan-500 text-cyan-400 text-[9px] font-mono font-bold flex items-center justify-center shrink-0">V3</span>
+                <div class="truncate">
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[11px] font-semibold text-slate-100 truncate">3: Genvex anlæg</span>
+                    <span class="text-[8px] px-1 rounded bg-emerald-500/10 text-emerald-400 font-mono">45–60%</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 truncate">Central balanceret ventilation</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" id="toggle8" class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Bygningsfysisk Opsummering (Kompakt Strip) -->
+      <div class="p-2 bg-cad-950 border-t border-cad-border text-[10px] space-y-1 shrink-0">
+        <div class="flex justify-between items-center text-slate-300">
+          <span class="text-slate-400">Krybekælder:</span>
+          <span id="labelPressure" class="font-mono text-amber-400 text-[10px]">Neutralt / Let overtryk</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-300">
+          <span class="text-slate-400">Siporex dæk:</span>
+          <span id="labelDeckSealing" class="font-mono text-rose-400 text-[10px]">Utæt (Revner i fuger)</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-300">
+          <span class="text-slate-400">Luftskifte stue:</span>
+          <span id="labelAirChange" class="font-mono text-slate-300 text-[10px]">0,15 h⁻¹ (Infiltration)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: 3D VIEWPORT (Three.js Canvas) -->
+    <main class="flex-1 relative bg-slate-950 overflow-hidden" id="canvasContainer">
+      <canvas id="threeCanvas" class="w-full h-full block"></canvas>
+
+      <!-- 3D HUD OVERLAY: Top Center Legend / Layer Indicator -->
+      <div class="absolute top-4 left-4 bg-cad-900/85 backdrop-blur-md px-3 py-2 rounded-lg border border-cad-border text-xs pointer-events-none shadow-lg">
+        <div class="text-[9px] font-mono text-sky-400 uppercase tracking-wider mb-1">Byggeteknisk Snit (1962)</div>
+        <div class="flex items-center space-x-3 text-slate-300 text-[11px]">
+          <span class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping opacity-75"></span>
+            <span class="w-2 h-2 rounded-full bg-rose-500 inline-block -ml-3.5"></span>
+            <span>Radongas</span>
+          </span>
+          <span class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span>
+            <span>Frisk udeluft (Stue)</span>
+          </span>
+          <span class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+            <span>Sokkelventilation</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 3D Navigation Helper floating in bottom right -->
+      <div class="absolute bottom-4 left-4 bg-cad-900/80 backdrop-blur-md px-3 py-2 rounded border border-cad-border text-[11px] text-slate-400 pointer-events-none font-mono">
+        <span>Venstreklik: Roter · Højreklik: Panorer · Scroll: Zoom</span>
+      </div>
+
+      <!-- Simple Label Toggle Button in top right -->
+      <div class="absolute top-4 right-4 pointer-events-auto">
+        <button id="btnToggleLabels" class="bg-cad-900/90 hover:bg-cad-800 text-slate-300 hover:text-white px-2.5 py-1.5 rounded border border-cad-border text-xs flex items-center space-x-1.5 shadow transition">
+          <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+          </svg>
+          <span id="labelToggleText">Skjul Teksttags</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL: LIVE RADON BEREGNER & INDELUFTSTATUS -->
+    <aside class="w-80 md:w-88 bg-cad-900 border-l border-cad-border flex flex-col shrink-0 z-10 shadow-2xl p-4 overflow-hidden h-full">
+      
+      <!-- Live Gauge Box -->
+      <div class="rounded-xl bg-cad-800 border border-cad-border p-4 shadow-lg flex flex-col items-center relative overflow-hidden shrink-0" id="gaugeCard">
+        <div class="w-full flex items-center justify-between mb-1">
+          <span class="text-xs font-mono text-slate-400 uppercase">Indendørs Radon</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">Stueetage</span>
+        </div>
+
+        <!-- Gauge SVG Circular Indicator -->
+        <div class="relative w-40 h-40 flex items-center justify-center my-1">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+            <!-- Background Arc -->
+            <circle cx="60" cy="60" r="50" stroke="#1f2d4a" stroke-width="10" fill="none" stroke-dasharray="314.15" stroke-dashoffset="62.8" stroke-linecap="round" />
+            <!-- Dynamic Foreground Arc -->
+            <circle id="gaugeProgress" cx="60" cy="60" r="50" stroke="#ef4444" stroke-width="10" fill="none" stroke-dasharray="314.15" stroke-dashoffset="120" stroke-linecap="round" class="transition-all duration-700 ease-out" />
+          </svg>
+          
+          <!-- Inner Text Container -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <span id="radonValue" class="text-3xl font-extrabold font-mono tracking-tight text-rose-400 transition-colors duration-500">540</span>
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Bq/m³</span>
+            <span id="radonStatusBadge" class="mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wide bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              KRITISK (RØDT)
+            </span>
+          </div>
+        </div>
+
+        <!-- Threshold scale references -->
+        <div class="w-full grid grid-cols-3 gap-1 pt-2 border-t border-cad-border/60 text-center text-[10px]">
+          <div class="p-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <span class="font-bold">&lt; 100</span>
+            <div class="text-[9px] text-slate-400">BR18 Krav</div>
+          </div>
+          <div class="p-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <span class="font-bold">100-300</span>
+            <div class="text-[9px] text-slate-400">Vurder tiltag</div>
+          </div>
+          <div class="p-1 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400">
+            <span class="font-bold">&gt; 300</span>
+            <div class="text-[9px] text-slate-400">Påkrævet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reduction percentage & comparison bar -->
+      <div class="mt-3 p-3 rounded-lg bg-cad-800 border border-cad-border space-y-1.5 shrink-0">
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400">Samlet Radondæmpning:</span>
+          <span id="reductionPercent" class="font-bold font-mono text-emerald-400">0%</span>
+        </div>
+        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-700">
+          <div id="reductionBar" class="bg-gradient-to-r from-sky-500 to-emerald-400 h-full w-0 transition-all duration-700 ease-out"></div>
+        </div>
+        <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+          <span>Udgangspunkt: 540 Bq/m³</span>
+          <span id="targetStatus">Mål: &lt;100 Bq/m³</span>
+        </div>
+      </div>
+
+      <!-- LIVE REALTIDSGRAF FOR INDENDØRS RADON (Bq/m³) -->
+      <div class="mt-3 p-3 rounded-xl bg-cad-800 border border-cad-border flex-1 flex flex-col min-h-[170px] shadow-lg overflow-hidden">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Radon over tid</h4>
+          </div>
+          <span class="text-[10px] font-mono text-slate-400">Stueplan (Realtid)</span>
+        </div>
+        
+        <!-- Legend references -->
+        <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2 px-1">
+          <span class="flex items-center space-x-1">
+            <span class="w-2.5 h-0.5 bg-cyan-400 inline-block"></span>
+            <span>Koncentration</span>
+          </span>
+          <span class="flex items-center space-x-1">
+            <span class="w-2.5 h-0.5 bg-rose-500 inline-block"></span>
+            <span>300 Bq (Påkrævet)</span>
+          </span>
+          <span class="flex items-center space-x-1">
+            <span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span>
+            <span>100 Bq (BR18)</span>
+          </span>
+        </div>
+
+        <!-- Canvas container with responsive dynamic sizing for fullscreen -->
+        <div class="relative flex-1 w-full min-h-[110px] bg-slate-950/80 rounded-lg border border-cad-border/70 overflow-hidden" id="chartContainer">
+          <canvas id="radonChartCanvas" class="w-full h-full block"></canvas>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- MODAL: BYGGETEKNISK DOKUMENTATION & BYG-ERFA -->
+  <div id="docsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-cad-900 border border-cad-border rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-cad-border flex justify-between items-center bg-cad-800">
+        <div>
+          <h3 class="text-base font-bold text-white">Byggeteknisk Dokumentation: Kettingvej 28</h3>
+          <p class="text-xs text-slate-400">Erfaringer med radonsikring af 1960'er parcelhuse med krybekælder</p>
+        </div>
+        <button id="btnCloseDocs" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-cad-700 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300 leading-relaxed">
+        
+        <div class="bg-cad-800/80 p-3 rounded-lg border border-cad-border">
+          <h4 class="font-bold text-sky-300 text-sm mb-1">1. Hvorfor er 1962-huse med krybekælder særligt udsatte?</h4>
+          <p>
+            Mange enfamiliehuse fra 1960’erne blev opført med uisolerede eller letisolerede krybekældre med letbetondæk (f.eks. Siporex eller Ytong-dækelementer). Med årene udtørrer og svinder fugerne mellem dækelementerne, hvilket skaber direkte sprækker til boligen. Når huset efterisoleres og får tætte termovinduer, forstærkes husets naturlige skorstenseffekt (termisk opdrift), som suger radonrig jordgas direkte op i beboelsen.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-cad-800/50 p-3 rounded border border-cad-border">
+            <h5 class="font-bold text-amber-300 mb-1">Byg-Erfa: Sokkelventilation</h5>
+            <p>
+              Iht. Byg-Erfa erfaringsblade skal krybekældre have minimum <strong>150 mm² ventilationsåbning pr. m² krybekælderareal</strong>, fordelt jævnt på to modstående facader for at sikre tværgående luftskifte. Mange huse fik fejlagtigt lukket sokkelristene i 1970'ernes energikrise.
+            </p>
+          </div>
+          <div class="bg-cad-800/50 p-3 rounded border border-cad-border">
+            <h5 class="font-bold text-cyan-300 mb-1">Byg-Erfa: Sommerkondens</h5>
+            <p>
+              Ved kraftig sokkelventilation om sommeren kan varm og fugtig udeluft ledes ind i den kolde krybekælder og kondensere på de kølige Siporex-dæk. Derfor kombineres sokkelventilation fordelagtigt med en tæt bunddækning mod jordbunden.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-cad-800/80 p-3 rounded-lg border border-cad-border">
+          <h4 class="font-bold text-emerald-300 text-sm mb-1">2. Fysiske tiltag & Virkemekanismer</h4>
+          <ul class="list-disc pl-4 space-y-1.5">
+            <li><strong>Radonspærre under nyt gulv:</strong> Etableres typisk ved gulvudskiftning. Membranen skal føres 10 cm op ad tilstødende vægge og klæbes lufttæt. Alle rørgennemføringer forsynes med præfabrikerede EPDM-manchetter.</li>
+            <li><strong>Bunddækning på jord:</strong> Udægges med min. 0,20 mm PE-folie med 200 mm overlæg, tapet med butylbånd og klemt fast mod fundament med trykimprægnerede lægter og fugemasse.</li>
+            <li><strong>Aktivt radonsug:</strong> Den mest driftssikre løsning. En lille centrifugalventilator (15–30 W) etablerer et konstant undertryk på ca. 10–20 Pa under dækket, hvorved trykgradienten vendes, så boligens indeluft aldrig suger gas op.</li>
+          </ul>
+        </div>
+
+        <div class="text-[11px] text-slate-400 italic">
+          Kilder: SBI-anvisning 233 "Radonsikring af eksisterende bygninger", Byg-Erfa blade (39) 11 06 14 og Bygningsreglement BR18 kapitel 8.
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 border-t border-cad-border bg-cad-800 flex justify-end">
+        <button id="btnGotIt" class="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs transition">
+          Forstået & Luk
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC & THREE.JS ENGINE -->
+  <script>
+    /* =========================================================================
+       1. STATE MANAGEMENT & MATHEMATICAL RADON ENGINE
+       ========================================================================= */
+    const BASE_RADON_LIVING = 540; // Bq/m³ (Baseline unmitigated 1962 house)
+    const BASE_RADON_CRAWL  = 1850; // Bq/m³ in crawlspace
+
+    // State of the measures (5 crawlspace/deck measures + 3 ventilation categories)
+    const state = {
+      t1_vents: false,          // Sokkelriste
+      t2_membrane: false,       // Radonspærre på Siporex
+      t3_groundCover: false,    // Bunddækning
+      t4_passiveStack: false,   // Passivt radonsug
+      t5_activeSuction: false,  // Aktivt mekanisk radonsug
+      t6_naturalVent: false,    // Kategori 1: Naturlig ventilation (vinduer/døre)
+      t7_singleRoomVent: false, // Kategori 2: Mekanisk ventilation ved enkeltrumsventilatorer
+      t8_genvex: false,         // Kategori 3: Mekanisk ventilation ved Genvex
+      showLabels: true
+    };
+
+    /**
+     * Compute living room radon concentration based on physical interactions:
+     * - Soil emission factor: 1.0 -> 0.32 if ground cover active
+     * - Crawlspace ventilation factor:
+     *     - Baseline: poorly vented (1.0)
+     *     - Vents: drops to ~0.40 (strong cross ventilation)
+     *     - Passive suction: drops to ~0.65
+     *     - Active suction: drops crawlspace pressure below room (factor 0.08)
+     * - Deck transmission (Siporex joints):
+     *     - Baseline: leaky porous joints (1.0)
+     *     - Radonspærre: tight barrier (0.15)
+     * - Living room ventilation dilution (3 categories):
+     *     - 1. Naturlig ventilation: riste i vinduer/døre (factor 0.72)
+     *     - 2. Enkeltrumsventilatorer: kontinuerlig decentral ventilation (factor 0.58)
+     *     - 3. Genvex: centralt balanceret anlæg (factor 0.45)
+     */
+    function calculateRadon() {
+      let soilEmission = 1.0;
+      if (state.t3_groundCover) soilEmission *= 0.32;
+
+      let crawlPurge = 1.0;
+      if (state.t1_vents) crawlPurge *= 0.40;
+      if (state.t4_passiveStack) crawlPurge *= 0.65;
+      if (state.t5_activeSuction) crawlPurge *= 0.08; // Active exhaust dominates
+
+      // Soil gas accumulation in crawlspace
+      const currentCrawl = Math.round(BASE_RADON_CRAWL * soilEmission * crawlPurge);
+
+      // Deck passage factor
+      let deckPassage = 1.0;
+      if (state.t2_membrane) deckPassage *= 0.15; // blocks 85%
+
+      // If active suction is running, it reverses pressure gradient across deck
+      if (state.t5_activeSuction) {
+        deckPassage *= 0.25; 
+      }
+
+      // Room dilution based on the 3 ventilation categories
+      let roomDilution = 1.0;
+      if (state.t6_naturalVent) roomDilution *= 0.72;
+      if (state.t7_singleRoomVent) roomDilution *= 0.58;
+      if (state.t8_genvex) roomDilution *= 0.45;
+
+      // Ensure dilution doesn't unrealistically drop below outdoor background limit
+      roomDilution = Math.max(0.30, roomDilution);
+
+      // Calculate final living room concentration
+      let finalLiving = Math.round(BASE_RADON_LIVING * (currentCrawl / BASE_RADON_CRAWL) * deckPassage * roomDilution);
+      finalLiving = Math.max(18, finalLiving);
+
+      const reductionPct = Math.round(((BASE_RADON_LIVING - finalLiving) / BASE_RADON_LIVING) * 100);
+
+      return {
+        livingRadon: finalLiving,
+        crawlRadon: currentCrawl,
+        reductionPct: reductionPct,
+        soilEmission: soilEmission,
+        deckPassage: deckPassage
+      };
+    }
+
+    /* =========================================================================
+       2. THREE.JS 3D SCENE SETUP & ARCHITECTURAL CUTAWAY
+       ========================================================================= */
+    const container = document.getElementById('canvasContainer');
+    const canvas = document.getElementById('threeCanvas');
+
+    // Scene & Renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0f1d);
+    scene.fog = new THREE.FogExp2(0x0a0f1d, 0.035);
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(11, 7, 12);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05; // Do not go too deep below ground
+    controls.minDistance = 3;
+    controls.maxDistance = 30;
+    controls.target.set(0, 1.2, 0);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xf8fafc, 1.2);
+    sunLight.position.set(10, 15, 8);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    const blueFillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+    blueFillLight.position.set(-10, 5, -8);
+    scene.add(blueFillLight);
+
+    /* =========================================================================
+       3. 3D GEOMETRY CREATION: KETTINGVEJ 28 (1962 PARCELHUS)
+       ========================================================================= */
+    // Materials palette (Architectural BIM aesthetic)
+    const matEarth = new THREE.MeshStandardMaterial({ color: 0x3d3126, roughness: 0.9, metalness: 0.1 });
+    const matConcrete = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.8, metalness: 0.1 });
+    const matLeca = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.9, metalness: 0.05 });
+    const matSiporex = new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.7, metalness: 0.05 });
+    const matJoint = new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.9 });
+    const matWoodFloor = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4, metalness: 0.1 });
+    const matBrick = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.75 });
+    const matInnerWall = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6 });
+    const matInsulation = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.9 });
+    
+    // Autentiske træ- og tagmaterialer til 1962 gitterspærkonstruktion
+    const matRoofTruss = new THREE.MeshStandardMaterial({ color: 0xc98236, roughness: 0.65 }); // 2½"x5" og 2½"x4" konstruktionstræ
+    const matTrussWeb = new THREE.MeshStandardMaterial({ color: 0xd9954a, roughness: 0.6 });  // Gitterstænger
+    const matLaske = new THREE.MeshStandardMaterial({ color: 0xefb068, roughness: 0.5 });      // 1"x4" trælasker
+    const matTopPlate = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.7 });   // 4"x4" Murrem
+    const matCeilingBatten = new THREE.MeshStandardMaterial({ color: 0xa88d67, roughness: 0.7 }); // Forskalling
+    const matVaporBarrier = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.2 }); // Alu-kraft dampspærre
+    const matGlass = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, roughness: 0.1, transmission: 0.7 });
+
+    const houseGroup = new THREE.Group();
+    scene.add(houseGroup);
+
+    // Dimensions
+    const HOUSE_W = 7.0; // X axis (depth of cut)
+    const HOUSE_L = 9.0; // Z axis (length)
+    const CRAWL_H = 0.7; // Crawlspace free height (~60-70 cm)
+    const SLAB_THICK = 0.15; // Siporex letbetondæk
+    const FLOOR_FINISH = 0.05;
+    const WALL_H = 2.4;  // Room ceiling height
+    const ATTIC_H = 1.8; // Roof pitch
+
+    // 3.1 TERRAIN & UNDERGROUND (Jordlag med radongasudvikling)
+    const groundGeo = new THREE.BoxGeometry(HOUSE_W + 3.0, 1.0, HOUSE_L + 3.0);
+    const groundMesh = new THREE.Mesh(groundGeo, matEarth);
+    groundMesh.position.set(0, -1.1, 0);
+    groundMesh.receiveShadow = true;
+    houseGroup.add(groundMesh);
+
+    // Soil strata visual accents (layer lines)
+    const strataGeo = new THREE.BoxGeometry(HOUSE_W + 3.05, 0.04, HOUSE_L + 3.05);
+    const strataMat = new THREE.MeshBasicMaterial({ color: 0x221811 });
+    const strata1 = new THREE.Mesh(strataGeo, strataMat);
+    strata1.position.set(0, -1.0, 0);
+    houseGroup.add(strata1);
+
+    // Crawlspace excavated pit ground level inside house
+    const crawlPitGeo = new THREE.BoxGeometry(HOUSE_W - 0.7, 0.4, HOUSE_L - 0.7);
+    const crawlPitMesh = new THREE.Mesh(crawlPitGeo, matEarth);
+    crawlPitMesh.position.set(0, -0.6, 0);
+    crawlPitMesh.receiveShadow = true;
+    houseGroup.add(crawlPitMesh);
+
+    // 3.2 FOUNDATION & SOKKEL (Betonfundament & Leca sokkel)
+    const fndThick = 0.35;
+    // Foundation walls: Left (-X), Right (+X), Back (-Z). (Front +Z is open for cutaway viewing)
+    const fndLeftGeo = new THREE.BoxGeometry(fndThick, CRAWL_H + 0.5, HOUSE_L);
+    const fndLeft = new THREE.Mesh(fndLeftGeo, matLeca);
+    fndLeft.position.set(-HOUSE_W / 2 + fndThick / 2, -0.25, 0);
+    fndLeft.castShadow = true;
+    fndLeft.receiveShadow = true;
+    houseGroup.add(fndLeft);
+
+    const fndRight = fndLeft.clone();
+    fndRight.position.x = HOUSE_W / 2 - fndThick / 2;
+    houseGroup.add(fndRight);
+
+    const fndBackGeo = new THREE.BoxGeometry(HOUSE_W, CRAWL_H + 0.5, fndThick);
+    const fndBack = new THREE.Mesh(fndBackGeo, matLeca);
+    fndBack.position.set(0, -0.25, -HOUSE_L / 2 + fndThick / 2);
+    fndBack.castShadow = true;
+    fndBack.receiveShadow = true;
+    houseGroup.add(fndBack);
+
+    // Plinth strip foundation footings (underground concrete)
+    const footLeftGeo = new THREE.BoxGeometry(0.5, 0.4, HOUSE_L + 0.4);
+    const footLeft = new THREE.Mesh(footLeftGeo, matConcrete);
+    footLeft.position.set(-HOUSE_W / 2 + fndThick / 2, -0.7, 0);
+    houseGroup.add(footLeft);
+
+    const footRight = footLeft.clone();
+    footRight.position.x = HOUSE_W / 2 - fndThick / 2;
+    houseGroup.add(footRight);
+
+    // 3.3 LETBETONDÆK (Siporex elementer med synlige utætte fuger)
+    const siporexGroup = new THREE.Group();
+    houseGroup.add(siporexGroup);
+
+    const SLAB_W = 0.55; // 55 cm standard Siporex width
+    const numSlabs = Math.floor((HOUSE_L - 0.4) / SLAB_W);
+    const startZ = -HOUSE_L / 2 + 0.3;
+
+    for (let i = 0; i < numSlabs; i++) {
+      const slabGeo = new THREE.BoxGeometry(HOUSE_W - 0.5, SLAB_THICK, SLAB_W - 0.03);
+      const slab = new THREE.Mesh(slabGeo, matSiporex);
+      const zPos = startZ + i * SLAB_W + SLAB_W / 2;
+      slab.position.set(0, 0.075, zPos);
+      slab.castShadow = true;
+      slab.receiveShadow = true;
+      siporexGroup.add(slab);
+
+      // Dark joint filler with visible shrinkage cracks
+      if (i < numSlabs - 1) {
+        const jointGeo = new THREE.BoxGeometry(HOUSE_W - 0.5, SLAB_THICK * 0.9, 0.03);
+        const joint = new THREE.Mesh(jointGeo, matJoint);
+        joint.position.set(0, 0.07, zPos + SLAB_W / 2);
+        siporexGroup.add(joint);
+      }
+    }
+
+    // 3.4 GULVOPBYGNING I STUEN (Strøer, isolering, undergulv & parket)
+    const floorGeo = new THREE.BoxGeometry(HOUSE_W - 0.6, FLOOR_FINISH, HOUSE_L - 0.6);
+    const floorMesh = new THREE.Mesh(floorGeo, matWoodFloor);
+    floorMesh.position.set(0, 0.15 + FLOOR_FINISH / 2, 0);
+    floorMesh.receiveShadow = true;
+    houseGroup.add(floorMesh);
+
+    // 3.5 YDERVÆGGE (Tegl hulmur med gennemskæring / cutaway)
+    // Left exterior wall (Outer brick + insulation + inner brick)
+    const wallLeftGeo = new THREE.BoxGeometry(0.32, WALL_H, HOUSE_L);
+    const wallLeft = new THREE.Mesh(wallLeftGeo, matBrick);
+    wallLeft.position.set(-HOUSE_W / 2 + 0.16, 0.2 + WALL_H / 2, 0);
+    wallLeft.castShadow = true;
+    wallLeft.receiveShadow = true;
+    houseGroup.add(wallLeft);
+
+    // Inner lining for left wall
+    const wallLeftInGeo = new THREE.BoxGeometry(0.02, WALL_H - 0.1, HOUSE_L - 0.6);
+    const wallLeftIn = new THREE.Mesh(wallLeftInGeo, matInnerWall);
+    wallLeftIn.position.set(-HOUSE_W / 2 + 0.32, 0.2 + WALL_H / 2, 0);
+    houseGroup.add(wallLeftIn);
+
+    // Back exterior wall with cut window
+    const wallBackGeo = new THREE.BoxGeometry(HOUSE_W, WALL_H, 0.32);
+    const wallBack = new THREE.Mesh(wallBackGeo, matBrick);
+    wallBack.position.set(0, 0.2 + WALL_H / 2, -HOUSE_L / 2 + 0.16);
+    wallBack.castShadow = true;
+    houseGroup.add(wallBack);
+
+    // Right exterior wall (cut lower in front for sectional view)
+    const wallRightGeo = new THREE.BoxGeometry(0.32, WALL_H, HOUSE_L * 0.6);
+    const wallRight = new THREE.Mesh(wallRightGeo, matBrick);
+    wallRight.position.set(HOUSE_W / 2 - 0.16, 0.2 + WALL_H / 2, -HOUSE_L * 0.2);
+    wallRight.castShadow = true;
+    houseGroup.add(wallRight);
+
+    // Window in back wall
+    const winGeo = new THREE.BoxGeometry(2.0, 1.1, 0.05);
+    const windowMesh = new THREE.Mesh(winGeo, matGlass);
+    windowMesh.position.set(0, 1.5, -HOUSE_L / 2 + 0.16);
+    houseGroup.add(windowMesh);
+
+    // Interior partitions (living zone separation)
+    const partitionGeo = new THREE.BoxGeometry(0.12, WALL_H, 2.5);
+    const partition = new THREE.Mesh(partitionGeo, matInnerWall);
+    partition.position.set(0.8, 0.2 + WALL_H / 2, -1.5);
+    houseGroup.add(partition);
+
+    // Architecture scale figure / furniture (Architectural silhouette)
+    const tableGeo = new THREE.BoxGeometry(1.4, 0.75, 0.8);
+    const matFurniture = new THREE.MeshStandardMaterial({ color: 0x475569 });
+    const table = new THREE.Mesh(tableGeo, matFurniture);
+    table.position.set(-1.2, 0.2 + 0.75 / 2, 0);
+    houseGroup.add(table);
+
+    // Radiator on back wall
+    const radGeo = new THREE.BoxGeometry(1.6, 0.5, 0.08);
+    const matRad = new THREE.MeshStandardMaterial({ color: 0xf1f5f9 });
+    const radiator = new THREE.Mesh(radGeo, matRad);
+    radiator.position.set(0, 0.6, -HOUSE_L / 2 + 0.38);
+    houseGroup.add(radiator);
+
+    // 3.6 LOFT & TAGKONSTRUKTION (W-GITTERSPÆR FRA 1962, FORSKALLING & BØLGEETERNIT)
+    const ceilingY = 0.2 + WALL_H; // Y = 2.60 m (underkant spærfod)
+
+    // 1. Loftbeklædning (Gips / pudset rørvæv)
+    const ceilingGeo = new THREE.BoxGeometry(HOUSE_W - 0.4, 0.02, HOUSE_L - 0.4);
+    const ceilingMesh = new THREE.Mesh(ceilingGeo, matInnerWall);
+    ceilingMesh.position.set(0, ceilingY + 0.01, 0);
+    houseGroup.add(ceilingMesh);
+
+    // 2. Forskallingsbrædder (19x100 mm) & Alu-kraft dampspærre
+    const battenLayer = new THREE.Mesh(
+      new THREE.BoxGeometry(HOUSE_W - 0.45, 0.019, HOUSE_L - 0.45),
+      matCeilingBatten
+    );
+    battenLayer.position.set(0, ceilingY + 0.03, 0);
+    houseGroup.add(battenLayer);
+
+    const vaporBarrier = new THREE.Mesh(
+      new THREE.BoxGeometry(HOUSE_W - 0.5, 0.005, HOUSE_L - 0.5),
+      matVaporBarrier
+    );
+    vaporBarrier.position.set(0, ceilingY + 0.042, 0);
+    houseGroup.add(vaporBarrier);
+
+    // 3. Mineraluldsisolering (100 mm bats iht. 1962-standard, udlagt mellem spærfødder)
+    const atticInsGeo = new THREE.BoxGeometry(HOUSE_W - 0.6, 0.10, HOUSE_L - 0.6);
+    const atticIns = new THREE.Mesh(atticInsGeo, matInsulation);
+    atticIns.position.set(0, ceilingY + 0.095, 0);
+    houseGroup.add(atticIns);
+
+    // 4. Murrem (4" x 4" / 100x100 mm tømmer over bagmur som spærene hviler på)
+    const plateGeo = new THREE.BoxGeometry(0.12, 0.10, HOUSE_L);
+    const plateL = new THREE.Mesh(plateGeo, matTopPlate);
+    plateL.position.set(-HOUSE_W / 2 + 0.18, ceilingY + 0.05, 0);
+    houseGroup.add(plateL);
+
+    const plateR = plateL.clone();
+    plateR.position.x = HOUSE_W / 2 - 0.18;
+    houseGroup.add(plateR);
+
+    // 5. W-GITTERSPÆR (OPRETSTÅENDE FINK-TRUSS I TRÆ IHT. 1962 BYGGESKIK)
+    const trussGroup = new THREE.Group();
+    houseGroup.add(trussGroup);
+
+    // Byggeteknisk knudepunkts-generator der forbinder to 2D koordinater præcist
+    function createTrussBeam(x1, y1, x2, y2, depth, thickness, material) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      const geo = new THREE.BoxGeometry(len, depth, thickness);
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, 0);
+      mesh.rotation.z = angle;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // Geometriske parametre for 1962 parcelhustaget:
+    // Kip er i midten (X = 0, Y = 4.40 m)
+    // Tagfod/ydervægge er i siderne (X = ±3.50 m, tagudhæng til X = ±3.95 m, Y = 2.54 m)
+    const Y_CEILING = ceilingY + 0.05; // 2.65 m (spærfod overkant)
+    const Y_KIP     = 4.40;           // 4.40 m (rygning/kip)
+    const X_WALL    = HOUSE_W / 2;    // 3.50 m (facadelinje)
+    const X_EAVE    = 3.95;           // 3.95 m (udhæng ved tagfod)
+    const Y_EAVE    = 2.54;           // 2.54 m (udhæng underkant)
+
+    // Spærdimensioner:
+    const T_CHORD = 0.063; // 2½" tykkelse
+    const D_TOP   = 0.125; // 5" overgurt
+    const D_BOT   = 0.100; // 4" undergurt
+    const T_WEB   = 0.034; // 1¼" gitterstænger
+    const D_WEB   = 0.095; // 4" gitterstænger
+    const T_LASKE = 0.022; // 1" trælasker
+
+    // Knudepunkter for W-gittermønsteret:
+    // - Kip / Apex: (0, 4.35)
+    // - Venstre tagfod: (-3.50, Y_CEILING)
+    // - Højre tagfod: (+3.50, Y_CEILING)
+    // - Venstre undergurt knude (N_B1): (-1.25, Y_CEILING + 0.04)
+    // - Højre undergurt knude (N_B2): (+1.25, Y_CEILING + 0.04)
+    // - Venstre overgurt midt (N_T1): (-1.75, 3.55)
+    // - Højre overgurt midt (N_T2): (+1.75, 3.55)
+
+    const numTrusses = 9; // c/c ca. 1.0 m modulafstand
+    const trussZStart = -HOUSE_L / 2 + 0.5;
+    const trussZStep = (HOUSE_L - 1.0) / (numTrusses - 1);
+
+    for (let i = 0; i < numTrusses; i++) {
+      const z = trussZStart + i * trussZStep;
+      const singleTruss = new THREE.Group();
+      singleTruss.position.set(0, 0, z);
+
+      // A. VANDRET SPÆRFOD (Undergurt 2½" x 4")
+      const botChord = createTrussBeam(-X_WALL - 0.05, Y_CEILING, X_WALL + 0.05, Y_CEILING, D_BOT, T_CHORD, matRoofTruss);
+      singleTruss.add(botChord);
+
+      // B. SKRÅ SPÆRHOVEDER (Overgurt 2½" x 5") - MØDES I KIP I MIDTEN OG FALDER MOD YDERVÆGGENE
+      // Venstre overgurt: fra venstre udhæng (-X_EAVE, Y_EAVE) op til Kip (0, Y_KIP)
+      const topChordL = createTrussBeam(-X_EAVE, Y_EAVE, 0.0, Y_KIP, D_TOP, T_CHORD, matRoofTruss);
+      singleTruss.add(topChordL);
+
+      // Højre overgurt: fra højre udhæng (+X_EAVE, Y_EAVE) op til Kip (0, Y_KIP)
+      const topChordR = createTrussBeam(X_EAVE, Y_EAVE, 0.0, Y_KIP, D_TOP, T_CHORD, matRoofTruss);
+      singleTruss.add(topChordR);
+
+      // C. W-GITTERSTÆNGER (Danner det karakteristiske opretstående W)
+      // 1. Skrå trykstang venstre: fra overgurt midte (-1.75, 3.55) ned til undergurt knude (-1.25, Y_CEILING + 0.04)
+      const strut1 = createTrussBeam(-1.75, 3.55, -1.25, Y_CEILING + 0.04, D_WEB, T_WEB, matTrussWeb);
+      singleTruss.add(strut1);
+
+      // 2. Skrå trækstang venstre: fra undergurt knude (-1.25, Y_CEILING + 0.04) op til kip (0.0, Y_KIP - 0.06)
+      const strut2 = createTrussBeam(-1.25, Y_CEILING + 0.04, 0.0, Y_KIP - 0.06, D_WEB, T_WEB, matTrussWeb);
+      singleTruss.add(strut2);
+
+      // 3. Skrå trækstang højre: fra kip (0.0, Y_KIP - 0.06) ned til undergurt knude (+1.25, Y_CEILING + 0.04)
+      const strut3 = createTrussBeam(0.0, Y_KIP - 0.06, 1.25, Y_CEILING + 0.04, D_WEB, T_WEB, matTrussWeb);
+      singleTruss.add(strut3);
+
+      // 4. Skrå trykstang højre: fra undergurt knude (+1.25, Y_CEILING + 0.04) op til overgurt midte (+1.75, 3.55)
+      const strut4 = createTrussBeam(1.25, Y_CEILING + 0.04, 1.75, 3.55, D_WEB, T_WEB, matTrussWeb);
+      singleTruss.add(strut4);
+
+      // D. TRÆLASKER / TÆNGER VED SAMLINGSKNUDER (Forside og bagside)
+      [-1, 1].forEach(side => {
+        const offsetZ = side * (T_CHORD / 2 + T_LASKE / 2);
+
+        // Kiplaske i toppen
+        const laskeApex = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.35, T_LASKE), matLaske);
+        laskeApex.position.set(0, Y_KIP - 0.16, offsetZ);
+        singleTruss.add(laskeApex);
+
+        // Tagfodslasker ved murkronen
+        const laskeHeelL = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, T_LASKE), matLaske);
+        laskeHeelL.position.set(-X_WALL + 0.22, Y_CEILING + 0.08, offsetZ);
+        singleTruss.add(laskeHeelL);
+
+        const laskeHeelR = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, T_LASKE), matLaske);
+        laskeHeelR.position.set(X_WALL - 0.22, Y_CEILING + 0.08, offsetZ);
+        singleTruss.add(laskeHeelR);
+
+        // Undergurt knudelasker
+        const laskeNodeBL = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.22, T_LASKE), matLaske);
+        laskeNodeBL.position.set(-1.25, Y_CEILING + 0.08, offsetZ);
+        singleTruss.add(laskeNodeBL);
+
+        const laskeNodeBR = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.22, T_LASKE), matLaske);
+        laskeNodeBR.position.set(1.25, Y_CEILING + 0.08, offsetZ);
+        singleTruss.add(laskeNodeBR);
+      });
+
+      trussGroup.add(singleTruss);
+    }
+
+    /* =========================================================================
+       4. INTERACTIVE RADON REMEDIATION 3D COMPONENTS (DE 6 TILTAG)
+       ========================================================================= */
+
+    // --- TILTAG 1: SOKKELRISTE (Ventilationsriste i fundament) ---
+    const ventsGroup = new THREE.Group();
+    houseGroup.add(ventsGroup);
+    ventsGroup.visible = false;
+
+    const ventGeo = new THREE.BoxGeometry(0.38, 0.16, 0.04);
+    const matVent = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.2 });
+
+    // Place vents on left and right plinth for cross-ventilation
+    for (let z = -3.0; z <= 3.0; z += 3.0) {
+      // Left vent
+      const vL = new THREE.Mesh(ventGeo, matVent);
+      vL.position.set(-HOUSE_W / 2 - 0.02, -0.15, z);
+      vL.rotation.y = Math.PI / 2;
+      ventsGroup.add(vL);
+
+      // Right vent
+      const vR = new THREE.Mesh(ventGeo, matVent);
+      vR.position.set(HOUSE_W / 2 + 0.02, -0.15, z);
+      vR.rotation.y = -Math.PI / 2;
+      ventsGroup.add(vR);
+    }
+
+    // --- TILTAG 2: RADONSPÆRRE PÅ SIPOREX (Tæt folie/membran m. tapede samlinger) ---
+    const matMembrane = new THREE.MeshStandardMaterial({
+      color: 0x06b6d4,
+      roughness: 0.2,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    });
+    const membraneGeo = new THREE.BoxGeometry(HOUSE_W - 0.58, 0.015, HOUSE_L - 0.58);
+    const membraneMesh = new THREE.Mesh(membraneGeo, matMembrane);
+    membraneMesh.position.set(0, 0.155, 0);
+    houseGroup.add(membraneMesh);
+    membraneMesh.visible = false;
+
+    // --- TILTAG 3: BUNDDÆKNING I KRYBEKÆLDER (PE-folie på råjord) ---
+    const matGroundCover = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.3,
+      metalness: 0.4,
+      side: THREE.DoubleSide
+    });
+    const groundCoverGeo = new THREE.BoxGeometry(HOUSE_W - 0.65, 0.02, HOUSE_L - 0.65);
+    const groundCoverMesh = new THREE.Mesh(groundCoverGeo, matGroundCover);
+    groundCoverMesh.position.set(0, -0.39, 0);
+    houseGroup.add(groundCoverMesh);
+    groundCoverMesh.visible = false;
+
+    // Edge battens holding down membrane to plinth
+    const battenMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9 });
+    const battenL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, HOUSE_L - 0.7), battenMat);
+    battenL.position.set(-HOUSE_W / 2 + 0.35, -0.37, 0);
+    groundCoverMesh.add(battenL);
+    const battenR = battenL.clone();
+    battenR.position.x = HOUSE_W / 2 - 0.35;
+    groundCoverMesh.add(battenR);
+
+    // --- TILTAG 4: PASSIVT RADONSUG (Aftræksrør gennem tag m. vindhætte) ---
+    const passiveStackGroup = new THREE.Group();
+    houseGroup.add(passiveStackGroup);
+    passiveStackGroup.visible = false;
+
+    const matPipe = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4, metalness: 0.2 });
+    // Riser rør ført fra krybekælder op igennem det korrekte tag
+    const pipeGeo = new THREE.CylinderGeometry(0.08, 0.08, 5.1, 16);
+    const pipeMesh = new THREE.Mesh(pipeGeo, matPipe);
+    pipeMesh.position.set(-1.8, 2.25, 1.0);
+    passiveStackGroup.add(pipeMesh);
+
+    // Sugeboks i krybekælder
+    const sumpGeo = new THREE.BoxGeometry(0.5, 0.2, 0.5);
+    const sumpMesh = new THREE.Mesh(sumpGeo, matPipe);
+    sumpMesh.position.set(-1.8, -0.3, 1.0);
+    passiveStackGroup.add(sumpMesh);
+
+    // Roterende vindhætte over tagfladen
+    const cowlGeo = new THREE.SphereGeometry(0.2, 12, 12);
+    const matCowl = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.2 });
+    const cowlMesh = new THREE.Mesh(cowlGeo, matCowl);
+    cowlMesh.position.set(-1.8, 4.80, 1.0);
+    passiveStackGroup.add(cowlMesh);
+
+    // --- TILTAG 5: AKTIVT MEKANISK RADONSUG ---
+    const activeSuctionGroup = new THREE.Group();
+    houseGroup.add(activeSuctionGroup);
+    activeSuctionGroup.visible = false;
+
+    // Lydisoleret kanalventilator placeret i tagrummet mellem gitterspærene
+    const fanBoxGeo = new THREE.BoxGeometry(0.4, 0.45, 0.4);
+    const matFanBox = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.5, roughness: 0.3 });
+    const fanBox = new THREE.Mesh(fanBoxGeo, matFanBox);
+    fanBox.position.set(-1.8, 3.10, 1.0);
+    activeSuctionGroup.add(fanBox);
+
+    // Status LED på ventilationskasse
+    const ledGeo = new THREE.SphereGeometry(0.03, 8, 8);
+    const matLed = new THREE.MeshBasicMaterial({ color: 0x34d399 });
+    const led = new THREE.Mesh(ledGeo, matLed);
+    led.position.set(-1.8, 3.10, 1.21);
+    activeSuctionGroup.add(led);
+
+    // --- VENTILATION 1: NATURLIG VENTILATION (Vindues- og vægriste) ---
+    const naturalVentGroup = new THREE.Group();
+    houseGroup.add(naturalVentGroup);
+    naturalVentGroup.visible = false;
+
+    const matAluVent = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
+    // Spalteventil øverst i vinduesrammen
+    const winVent = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.05, 0.08), matAluVent);
+    winVent.position.set(0, 2.06, -HOUSE_L / 2 + 0.16);
+    naturalVentGroup.add(winVent);
+
+    // Vægrist / klapventil i bagmuren
+    const wallVentLouver = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.05), matAluVent);
+    wallVentLouver.position.set(-2.0, 1.9, -HOUSE_L / 2 + 0.16);
+    naturalVentGroup.add(wallVentLouver);
+
+    const wallVentInterior = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.20, 0.03), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    wallVentInterior.position.set(-2.0, 1.9, -HOUSE_L / 2 + 0.34);
+    naturalVentGroup.add(wallVentInterior);
+
+    // --- VENTILATION 2: MEKANISK VENTILATION VED ENKELTRUMSVENTILATORER ---
+    const singleRoomVentGroup = new THREE.Group();
+    houseGroup.add(singleRoomVentGroup);
+    singleRoomVentGroup.visible = false;
+
+    // Gennemføringsrør med keramisk veksler gennem venstre ydervæg
+    const matVentTube = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 });
+    const ventTube = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.38, 20), matVentTube);
+    ventTube.rotation.z = Math.PI / 2;
+    ventTube.position.set(-HOUSE_W / 2 + 0.16, 1.65, 1.3);
+    singleRoomVentGroup.add(ventTube);
+
+    // Indendørs designfront med spalteåbning
+    const matIndoorCover = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+    const indoorCover = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.28, 0.28), matIndoorCover);
+    indoorCover.position.set(-HOUSE_W / 2 + 0.35, 1.65, 1.3);
+    singleRoomVentGroup.add(indoorCover);
+
+    // Statusdiode på frontpanel
+    const singleVentLed = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.04, 16), new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
+    singleVentLed.rotation.z = Math.PI / 2;
+    singleVentLed.position.set(-HOUSE_W / 2 + 0.355, 1.65, 1.3);
+    singleRoomVentGroup.add(singleVentLed);
+
+    // Udvendig stormhætte i rustfrit stål på facaden
+    const matExtCowl = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.85, roughness: 0.25 });
+    const extCowl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.25, 0.25), matExtCowl);
+    extCowl.position.set(-HOUSE_W / 2 - 0.035, 1.65, 1.3);
+    singleRoomVentGroup.add(extCowl);
+
+    // --- VENTILATION 3: MEKANISK VENTILATION VED GENVEX (Centralt på loft) ---
+    const ventilationGroup = new THREE.Group();
+    houseGroup.add(ventilationGroup);
+    ventilationGroup.visible = false;
+
+    // Genveks loftsaggregat i tagrum
+    const mvhrGeo = new THREE.BoxGeometry(0.9, 0.55, 0.8);
+    const matMvhr = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.6, roughness: 0.2 });
+    const mvhrUnit = new THREE.Mesh(mvhrGeo, matMvhr);
+    mvhrUnit.position.set(1.2, 3.0, 0);
+    ventilationGroup.add(mvhrUnit);
+
+    // Indblæsningskanal og loftsarmatur (Frisk forvarmet udeluft)
+    const ductMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.2 });
+    const ductSupply = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), ductMat);
+    ductSupply.position.set(1.5, 0.2 + WALL_H + 0.15, -1.2);
+    ventilationGroup.add(ductSupply);
+
+    const diffuserMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0x38bdf8 }));
+    diffuserMesh.position.set(1.5, 0.2 + WALL_H - 0.02, -1.2);
+    ventilationGroup.add(diffuserMesh);
+
+    // Udsugningskanal og loftsarmatur (Udsugning af brugt/radonholdig luft)
+    const ductExtract = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), ductMat);
+    ductExtract.position.set(-1.0, 0.2 + WALL_H + 0.15, 1.2);
+    ventilationGroup.add(ductExtract);
+
+    const extractDiffuser = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xf43f5e }));
+    extractDiffuser.position.set(-1.0, 0.2 + WALL_H - 0.02, 1.2);
+    ventilationGroup.add(extractDiffuser);
+
+    /* =========================================================================
+       5. PARTICLE SYSTEMS: RADON GAS & DUAL AIRFLOW CURRENTS (KRYBEKÆLDER + STUE)
+       ========================================================================= */
+
+    // 5.1 RADON PARTICLES (Glowing red/purple particles rising from soil)
+    const RADON_PARTICLE_COUNT = 450;
+    const radonGeo = new THREE.BufferGeometry();
+    const radonPositions = new Float32Array(RADON_PARTICLE_COUNT * 3);
+    const radonVelocities = [];
+
+    // Helper texture for soft glowing particles
+    function createCircleTexture() {
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.3, 'rgba(244,63,94,0.85)');
+      grad.addColorStop(0.7, 'rgba(168,85,247,0.4)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      const texture = new THREE.Texture(c);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    const radonMat = new THREE.PointsMaterial({
+      size: 0.28,
+      map: createCircleTexture(),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.85
+    });
+
+    for (let i = 0; i < RADON_PARTICLE_COUNT; i++) {
+      radonPositions[i * 3 + 0] = (Math.random() - 0.5) * (HOUSE_W - 0.8);
+      radonPositions[i * 3 + 1] = -0.55 + Math.random() * 2.8;
+      radonPositions[i * 3 + 2] = (Math.random() - 0.5) * (HOUSE_L - 1.2);
+
+      radonVelocities.push({
+        vx: (Math.random() - 0.5) * 0.005,
+        vy: 0.006 + Math.random() * 0.008,
+        vz: (Math.random() - 0.5) * 0.005
+      });
+    }
+
+    radonGeo.setAttribute('position', new THREE.BufferAttribute(radonPositions, 3));
+    const radonParticles = new THREE.Points(radonGeo, radonMat);
+    houseGroup.add(radonParticles);
+
+    // 5.2 SOKKELVENTILATION PARTIKLER (KUN i krybekælderen ved sokkelriste T1)
+    const CRAWL_AIR_COUNT = 90;
+    const crawlAirGeo = new THREE.BufferGeometry();
+    const crawlAirPositions = new Float32Array(CRAWL_AIR_COUNT * 3);
+    const crawlAirVelocities = [];
+
+    function createCrawlAirTexture() {
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.4, 'rgba(52,211,153,0.85)');
+      grad.addColorStop(0.8, 'rgba(16,185,129,0.3)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      const texture = new THREE.Texture(c);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    const crawlAirMat = new THREE.PointsMaterial({
+      size: 0.22,
+      map: createCrawlAirTexture(),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.0 // Kun synlig når sokkelriste (T1) er tændt
+    });
+
+    for (let i = 0; i < CRAWL_AIR_COUNT; i++) {
+      crawlAirPositions[i * 3 + 0] = -HOUSE_W / 2 + Math.random() * HOUSE_W;
+      crawlAirPositions[i * 3 + 1] = -0.3 + Math.random() * 0.3;
+      crawlAirPositions[i * 3 + 2] = (Math.random() - 0.5) * (HOUSE_L - 0.8);
+      crawlAirVelocities.push({
+        vx: 0.02 + Math.random() * 0.02,
+        vy: (Math.random() - 0.5) * 0.002,
+        vz: (Math.random() - 0.5) * 0.005
+      });
+    }
+    crawlAirGeo.setAttribute('position', new THREE.BufferAttribute(crawlAirPositions, 3));
+    const crawlAirParticles = new THREE.Points(crawlAirGeo, crawlAirMat);
+    houseGroup.add(crawlAirParticles);
+
+    // 5.3 FRISK UDELUFT PARTIKLER I STUEN (Ventilationstiltag V1, V2, V3)
+    const ROOM_AIR_COUNT = 160;
+    const roomAirGeo = new THREE.BufferGeometry();
+    const roomAirPositions = new Float32Array(ROOM_AIR_COUNT * 3);
+    const roomAirVelocities = [];
+
+    function createFreshRoomAirTexture() {
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.35, 'rgba(56,189,248,0.9)');
+      grad.addColorStop(0.7, 'rgba(6,182,212,0.4)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      const texture = new THREE.Texture(c);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    const roomAirMat = new THREE.PointsMaterial({
+      size: 0.25,
+      map: createFreshRoomAirTexture(),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.0 // Skifter afhængig af V1, V2 eller V3
+    });
+
+    for (let i = 0; i < ROOM_AIR_COUNT; i++) {
+      roomAirPositions[i * 3 + 0] = (Math.random() - 0.5) * (HOUSE_W - 1.2);
+      roomAirPositions[i * 3 + 1] = 0.4 + Math.random() * 1.8;
+      roomAirPositions[i * 3 + 2] = (Math.random() - 0.5) * (HOUSE_L - 1.2);
+      roomAirVelocities.push({
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        source: i % 3 // 0: naturlig vindue, 1: enkeltrum, 2: genvex
+      });
+    }
+    roomAirGeo.setAttribute('position', new THREE.BufferAttribute(roomAirPositions, 3));
+    const roomAirParticles = new THREE.Points(roomAirGeo, roomAirMat);
+    houseGroup.add(roomAirParticles);
+
+    /* =========================================================================
+       6. 3D ANNOTATION LABELS & HUD SPRITES
+       ========================================================================= */
+    function createLabelSprite(text, subtext) {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 100;
+      const ctx = c.getContext('2d');
+
+      // Card background
+      ctx.fillStyle = 'rgba(12, 17, 29, 0.85)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      roundRect(ctx, 4, 4, 248, 92, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      // Text
+      ctx.font = 'bold 22px Plus Jakarta Sans, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, 14, 38);
+
+      ctx.font = '16px JetBrains Mono, monospace';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(subtext, 14, 70);
+
+      const texture = new THREE.Texture(c);
+      texture.needsUpdate = true;
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(1.4, 0.55, 1.0);
+      return sprite;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    const labelsGroup = new THREE.Group();
+    scene.add(labelsGroup);
+
+    const lblCrawl = createLabelSprite('Krybekælder (~60 cm)', 'Høj gasophobning');
+    lblCrawl.position.set(HOUSE_W / 2 + 1.2, -0.2, 0);
+    labelsGroup.add(lblCrawl);
+
+    const lblDeck = createLabelSprite('Siporex Letbetondæk', 'Utætte klinkefuger');
+    lblDeck.position.set(-HOUSE_W / 2 - 1.2, 0.25, 1.5);
+    labelsGroup.add(lblDeck);
+
+    const lblLiving = createLabelSprite('Stueplan (Indeluft)', 'Opholdszone');
+    lblLiving.position.set(HOUSE_W / 2 + 1.2, 1.4, -1.0);
+    labelsGroup.add(lblLiving);
+
+    /* =========================================================================
+       7. UI INTERACTION & DASHBOARD BINDINGS
+       ========================================================================= */
+    const toggles = [
+      { id: 'toggle1', key: 't1_vents', mesh: ventsGroup, card: 'card-t1' },
+      { id: 'toggle2', key: 't2_membrane', mesh: membraneMesh, card: 'card-t2' },
+      { id: 'toggle3', key: 't3_groundCover', mesh: groundCoverMesh, card: 'card-t3' },
+      { id: 'toggle4', key: 't4_passiveStack', mesh: passiveStackGroup, card: 'card-t4' },
+      { id: 'toggle5', key: 't5_activeSuction', mesh: activeSuctionGroup, card: 'card-t5' },
+      { id: 'toggle6', key: 't6_naturalVent', mesh: naturalVentGroup, card: 'card-t6' },
+      { id: 'toggle7', key: 't7_singleRoomVent', mesh: singleRoomVentGroup, card: 'card-t7' },
+      { id: 'toggle8', key: 't8_genvex', mesh: ventilationGroup, card: 'card-t8' }
+    ];
+
+    toggles.forEach(t => {
+      const el = document.getElementById(t.id);
+      el.addEventListener('change', (e) => {
+        state[t.key] = e.target.checked;
+        if (t.mesh) t.mesh.visible = e.target.checked;
+        
+        // Visual card active state
+        const cardEl = document.getElementById(t.card);
+        if (e.target.checked) {
+          cardEl.classList.add('border-cyan-500', 'bg-cad-800');
+        } else {
+          cardEl.classList.remove('border-cyan-500', 'border-sky-500');
+        }
+
+        updateDashboard();
+      });
+    });
+
+    // Update Dashboard UI Elements
+    function updateDashboard() {
+      const sim = calculateRadon();
+
+      // Active count badge (5 bygningstiltag + 3 ventilationstiltag)
+      const activeCount = Object.keys(state).filter(k => k.startsWith('t') && state[k]).length;
+      document.getElementById('activeCountBadge').innerText = `${activeCount} / 8 aktive`;
+
+      // Value text with color transitions
+      const valEl = document.getElementById('radonValue');
+      valEl.innerText = sim.livingRadon;
+
+      // Status badge and styling
+      const statusBadge = document.getElementById('radonStatusBadge');
+      const gaugeProgress = document.getElementById('gaugeProgress');
+      const gaugeCard = document.getElementById('gaugeCard');
+
+      // Gauge arc math: circumference = 2 * PI * 50 = 314.15
+      // Clamp between 0 (green) and 600 (red)
+      const ratio = Math.min(1.0, sim.livingRadon / 600);
+      const strokeOffset = 314.15 * (1 - ratio * 0.8); // 80% arc
+      gaugeProgress.style.strokeDashoffset = strokeOffset;
+
+      if (sim.livingRadon < 100) {
+        valEl.className = "text-3xl font-extrabold font-mono tracking-tight text-emerald-400";
+        gaugeProgress.setAttribute('stroke', '#10b981');
+        statusBadge.className = "mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        statusBadge.innerText = "GODKENDT (BR18 OPFYLDT)";
+        gaugeCard.classList.remove('glow-radon');
+        gaugeCard.classList.add('glow-safe');
+      } else if (sim.livingRadon <= 300) {
+        valEl.className = "text-3xl font-extrabold font-mono tracking-tight text-amber-400";
+        gaugeProgress.setAttribute('stroke', '#f59e0b');
+        statusBadge.className = "mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/30";
+        statusBadge.innerText = "MODERAT FORHØJET (GULT)";
+        gaugeCard.classList.remove('glow-radon', 'glow-safe');
+      } else {
+        valEl.className = "text-3xl font-extrabold font-mono tracking-tight text-rose-500";
+        gaugeProgress.setAttribute('stroke', '#ef4444');
+        statusBadge.className = "mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wide bg-rose-500/20 text-rose-400 border border-rose-500/30";
+        statusBadge.innerText = "KRITISK NIVEAU (RØDT)";
+        gaugeCard.classList.remove('glow-safe');
+        gaugeCard.classList.add('glow-radon');
+      }
+
+      // Reduction bar
+      document.getElementById('reductionPercent').innerText = `${sim.reductionPct}%`;
+      document.getElementById('reductionBar').style.width = `${sim.reductionPct}%`;
+
+      // Physics summary indicators
+      const lblPressure = document.getElementById('labelPressure');
+      if (state.t5_activeSuction) {
+        lblPressure.innerText = "Kraftigt undertryk (-18 Pa)";
+        lblPressure.className = "font-mono text-emerald-400 font-bold";
+      } else if (state.t4_passiveStack) {
+        lblPressure.innerText = "Svagt undertryk (-3 Pa)";
+        lblPressure.className = "font-mono text-amber-300";
+      } else {
+        lblPressure.innerText = "Neutralt / Termisk opdrift";
+        lblPressure.className = "font-mono text-rose-400";
+      }
+
+      const lblDeck = document.getElementById('labelDeckSealing');
+      if (state.t2_membrane) {
+        lblDeck.innerText = "Lufttæt (SBS/PE Membran)";
+        lblDeck.className = "font-mono text-emerald-400";
+      } else {
+        lblDeck.innerText = "Utæt (Revner i fuger)";
+        lblDeck.className = "font-mono text-rose-400";
+      }
+
+      // Calculated air change in stueplan based on the 3 ventilation categories
+      const lblAir = document.getElementById('labelAirChange');
+      let airChangeVal = 0.15;
+      let activeVentDescs = [];
+      if (state.t6_naturalVent) {
+        airChangeVal += 0.15;
+        activeVentDescs.push("Naturlig");
+      }
+      if (state.t7_singleRoomVent) {
+        airChangeVal += 0.25;
+        activeVentDescs.push("Enkeltrum");
+      }
+      if (state.t8_genvex) {
+        airChangeVal += 0.40;
+        activeVentDescs.push("Genvex");
+      }
+
+      if (activeVentDescs.length > 0) {
+        lblAir.innerText = `${airChangeVal.toFixed(2).replace('.', ',')} h⁻¹ (${activeVentDescs.join('+')})`;
+        lblAir.className = "font-mono text-cyan-400 font-bold text-[10px]";
+      } else {
+        lblAir.innerText = "0,15 h⁻¹ (Infiltration)";
+        lblAir.className = "font-mono text-slate-400 text-[10px]";
+      }
+
+      // Sokkelventilation partikler (kun i krybekælder)
+      crawlAirMat.opacity = state.t1_vents ? 0.8 : 0.0;
+
+      // Stueplan ventilation (frisk udeluft erstatter radon)
+      const isIndoorVentActive = state.t6_naturalVent || state.t7_singleRoomVent || state.t8_genvex;
+      roomAirMat.opacity = isIndoorVentActive ? 0.85 : 0.0;
+
+      // Record live value into radon history chart
+      recordRadonHistory(sim.livingRadon);
+    }
+
+    // Reset All Measures
+    document.getElementById('btnReset').addEventListener('click', () => {
+      toggles.forEach(t => {
+        const input = document.getElementById(t.id);
+        if (input) input.checked = false;
+        state[t.key] = false;
+        if (t.mesh) t.mesh.visible = false;
+        const card = document.getElementById(t.card);
+        if (card) card.classList.remove('border-sky-500', 'border-cyan-500');
+      });
+      updateDashboard();
+    });
+
+    // Toggle 3D Labels
+    const btnToggleLabels = document.getElementById('btnToggleLabels');
+    if (btnToggleLabels) {
+      btnToggleLabels.addEventListener('click', () => {
+        state.showLabels = !state.showLabels;
+        labelsGroup.visible = state.showLabels;
+        const txt = document.getElementById('labelToggleText');
+        if (txt) txt.innerText = state.showLabels ? 'Skjul Teksttags' : 'Vis Teksttags';
+      });
+    }
+
+    // Modal docs
+    const modal = document.getElementById('docsModal');
+    document.getElementById('btnOpenDocs').addEventListener('click', () => modal.classList.remove('hidden'));
+    document.getElementById('btnCloseDocs').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('btnGotIt').addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+
+    /* =========================================================================
+       7.5 REALTIME RADON HISTORY CHART ENGINE
+       ========================================================================= */
+    const chartCanvas = document.getElementById('radonChartCanvas');
+    const chartCtx = chartCanvas ? chartCanvas.getContext('2d') : null;
+    const radonHistory = [];
+    const MAX_POINTS = 60;
+    let targetHistoryVal = BASE_RADON_LIVING;
+    let currentHistoryVal = BASE_RADON_LIVING;
+
+    // Initialize history buffer with initial baseline
+    for (let i = 0; i < MAX_POINTS; i++) {
+      radonHistory.push(BASE_RADON_LIVING);
+    }
+
+    function recordRadonHistory(val) {
+      targetHistoryVal = val;
+    }
+
+    // Continuous ticker for smooth chart transition
+    setInterval(() => {
+      // Smooth interpolation towards current simulated value
+      currentHistoryVal += (targetHistoryVal - currentHistoryVal) * 0.18;
+      radonHistory.push(currentHistoryVal);
+      if (radonHistory.length > MAX_POINTS) {
+        radonHistory.shift();
+      }
+    }, 180);
+
+    function drawRadonChart() {
+      if (!chartCanvas || !chartCtx) return;
+      const rect = chartCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = rect.width;
+      const h = rect.height;
+      if (w < 10 || h < 10) return;
+
+      if (chartCanvas.width !== Math.floor(w * dpr) || chartCanvas.height !== Math.floor(h * dpr)) {
+        chartCanvas.width = Math.floor(w * dpr);
+        chartCanvas.height = Math.floor(h * dpr);
+      }
+
+      chartCtx.save();
+      chartCtx.scale(dpr, dpr);
+      chartCtx.clearRect(0, 0, w, h);
+
+      const padTop = 14;
+      const padBottom = 16;
+      const padLeft = 32;
+      const padRight = 10;
+      const plotW = Math.max(10, w - padLeft - padRight);
+      const plotH = Math.max(10, h - padTop - padBottom);
+
+      const maxVal = 600;
+      const minVal = 0;
+
+      function yCoord(val) {
+        return padTop + plotH - ((val - minVal) / (maxVal - minVal)) * plotH;
+      }
+
+      // Background grid lines
+      chartCtx.strokeStyle = 'rgba(42, 59, 97, 0.45)';
+      chartCtx.lineWidth = 1;
+      [0, 200, 400, 600].forEach(v => {
+        const y = yCoord(v);
+        chartCtx.beginPath();
+        chartCtx.moveTo(padLeft, y);
+        chartCtx.lineTo(padLeft + plotW, y);
+        chartCtx.stroke();
+
+        chartCtx.fillStyle = '#64748b';
+        chartCtx.font = '9px "JetBrains Mono", monospace';
+        chartCtx.textAlign = 'right';
+        chartCtx.fillText(v, padLeft - 4, y + 3);
+      });
+
+      // 300 Bq/m³ Threshold Line (Red)
+      const y300 = yCoord(300);
+      chartCtx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+      chartCtx.setLineDash([4, 4]);
+      chartCtx.beginPath();
+      chartCtx.moveTo(padLeft, y300);
+      chartCtx.lineTo(padLeft + plotW, y300);
+      chartCtx.stroke();
+
+      // 100 Bq/m³ Threshold Line (Green BR18)
+      const y100 = yCoord(100);
+      chartCtx.strokeStyle = 'rgba(16, 185, 129, 0.7)';
+      chartCtx.beginPath();
+      chartCtx.moveTo(padLeft, y100);
+      chartCtx.lineTo(padLeft + plotW, y100);
+      chartCtx.stroke();
+      chartCtx.setLineDash([]);
+
+      if (radonHistory.length < 2) {
+        chartCtx.restore();
+        return;
+      }
+
+      // Compute data points
+      const points = radonHistory.map((val, idx) => {
+        const x = padLeft + (idx / (MAX_POINTS - 1)) * plotW;
+        const y = yCoord(val);
+        return { x, y, val };
+      });
+
+      // Gradient Fill Area
+      const latestVal = points[points.length - 1].val;
+      const grad = chartCtx.createLinearGradient(0, padTop, 0, padTop + plotH);
+      if (latestVal > 300) {
+        grad.addColorStop(0, 'rgba(239, 68, 68, 0.35)');
+        grad.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+      } else if (latestVal > 100) {
+        grad.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
+        grad.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+      } else {
+        grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+        grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+      }
+
+      chartCtx.fillStyle = grad;
+      chartCtx.beginPath();
+      chartCtx.moveTo(points[0].x, padTop + plotH);
+      points.forEach(p => chartCtx.lineTo(p.x, p.y));
+      chartCtx.lineTo(points[points.length - 1].x, padTop + plotH);
+      chartCtx.closePath();
+      chartCtx.fill();
+
+      // Main line stroke
+      chartCtx.strokeStyle = latestVal > 300 ? '#ef4444' : (latestVal > 100 ? '#f59e0b' : '#38bdf8');
+      chartCtx.lineWidth = 2.2;
+      chartCtx.beginPath();
+      points.forEach((p, idx) => {
+        if (idx === 0) chartCtx.moveTo(p.x, p.y);
+        else chartCtx.lineTo(p.x, p.y);
+      });
+      chartCtx.stroke();
+
+      // Latest current marker
+      const last = points[points.length - 1];
+      chartCtx.fillStyle = '#ffffff';
+      chartCtx.beginPath();
+      chartCtx.arc(last.x, last.y, 3.5, 0, Math.PI * 2);
+      chartCtx.fill();
+
+      chartCtx.restore();
+    }
+
+    /* =========================================================================
+       8. ANIMATION LOOP & PARTICLE DYNAMICS
+       ========================================================================= */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      controls.update();
+
+      // Dynamic particle physics based on active mitigation measures
+      const pos = radonGeo.attributes.position.array;
+      const sim = calculateRadon();
+      const hasIndoorVent = state.t6_naturalVent || state.t7_singleRoomVent || state.t8_genvex;
+
+      for (let i = 0; i < RADON_PARTICLE_COUNT; i++) {
+        const idx = i * 3;
+        const vel = radonVelocities[i];
+
+        // 1. Upward buoyancy from soil
+        pos[idx + 1] += vel.vy;
+        pos[idx + 0] += Math.sin(time * 2 + i) * 0.002 + vel.vx;
+        pos[idx + 2] += Math.cos(time * 2 + i) * 0.002 + vel.vz;
+
+        // Active suction effect: particles in crawlspace get sucked toward suction point
+        if (state.t5_activeSuction && pos[idx + 1] < 0.2) {
+          const suctionTargetX = -1.8;
+          const suctionTargetZ = 1.0;
+          pos[idx + 0] += (suctionTargetX - pos[idx + 0]) * 0.04;
+          pos[idx + 2] += (suctionTargetZ - pos[idx + 2]) * 0.04;
+
+          if (Math.abs(pos[idx + 0] - suctionTargetX) < 0.25 && Math.abs(pos[idx + 2] - suctionTargetZ) < 0.25) {
+            pos[idx + 1] = 4.4 + Math.random() * 0.5; // Discharge above roof!
+          }
+        }
+
+        // Cross-ventilation flush from sokkelriste: push particles sideways out of crawlspace
+        if (state.t1_vents && pos[idx + 1] < 0.15) {
+          pos[idx + 0] += 0.02; // Drift out toward right side
+        }
+
+        // Radonspærre collision barrier: blocks particles from entering stueplan
+        if (state.t2_membrane && pos[idx + 1] > 0.14 && pos[idx + 1] < 0.3) {
+          pos[idx + 1] = -0.5 + Math.random() * 0.2; // reset back down to ground
+          pos[idx + 0] = (Math.random() - 0.5) * (HOUSE_W - 1.0);
+          pos[idx + 2] = (Math.random() - 0.5) * (HOUSE_L - 1.2);
+        }
+
+        // BOLIGVENTILATION: Når ventilation i stuen er aktiv, fortrænges radonpartikler i opholdsrummet
+        if (hasIndoorVent && pos[idx + 1] > 0.22 && pos[idx + 1] < 2.55) {
+          if (state.t8_genvex) {
+            // Suges mod Genvex udsugningsarmatur i loftet (-1.0, 2.55, 1.2)
+            pos[idx + 0] += (-1.0 - pos[idx + 0]) * 0.025;
+            pos[idx + 1] += 0.015;
+            pos[idx + 2] += (1.2 - pos[idx + 2]) * 0.025;
+          } else if (state.t7_singleRoomVent) {
+            // Skubbes mod rummets periferi af den decentrale luftstrøm
+            pos[idx + 0] += 0.015;
+            pos[idx + 1] += 0.008;
+          } else if (state.t6_naturalVent) {
+            // Naturlig opdrift og aftræk skyller radongassen op mod loftet
+            pos[idx + 1] += 0.012;
+            pos[idx + 2] += 0.01;
+          }
+        }
+
+        // Reset particle when it escapes upper ceiling boundary
+        if (pos[idx + 1] > 4.6 || Math.abs(pos[idx + 0]) > HOUSE_W / 2 + 1 || Math.abs(pos[idx + 2]) > HOUSE_L / 2 + 1) {
+          // Re-emit from earth pit
+          pos[idx + 0] = (Math.random() - 0.5) * (HOUSE_W - 1.0);
+          pos[idx + 1] = state.t3_groundCover ? -0.45 : -0.6;
+          pos[idx + 2] = (Math.random() - 0.5) * (HOUSE_L - 1.2);
+        }
+      }
+      radonGeo.attributes.position.needsUpdate = true;
+
+      // Justér radonens glød baseret på beregnet radonniveau i stuen
+      radonMat.opacity = 0.2 + (sim.livingRadon / BASE_RADON_LIVING) * 0.7;
+
+      // 2. KRYBEKÆLDERENS SOKKELLUFT STRØM (KUN sokkelriste T1)
+      if (state.t1_vents) {
+        const cPos = crawlAirGeo.attributes.position.array;
+        for (let i = 0; i < CRAWL_AIR_COUNT; i++) {
+          const idx = i * 3;
+          cPos[idx + 0] += crawlAirVelocities[i].vx;
+          cPos[idx + 1] += crawlAirVelocities[i].vy;
+          cPos[idx + 2] += crawlAirVelocities[i].vz;
+
+          // Frisk udeluft strømmer tværs igennem krybekælderen
+          if (cPos[idx + 0] > HOUSE_W / 2 - 0.1) {
+            cPos[idx + 0] = -HOUSE_W / 2 + 0.2;
+            cPos[idx + 1] = -0.35 + Math.random() * 0.35;
+            cPos[idx + 2] = (Math.random() - 0.5) * (HOUSE_L - 1.0);
+          }
+        }
+        crawlAirGeo.attributes.position.needsUpdate = true;
+      }
+
+      // 3. STUENS FRISKE UDELUFTSTRØM (V1, V2, V3 der erstatter radon)
+      if (hasIndoorVent) {
+        const rPos = roomAirGeo.attributes.position.array;
+        for (let i = 0; i < ROOM_AIR_COUNT; i++) {
+          const idx = i * 3;
+          const src = roomAirVelocities[i].source;
+
+          if (state.t8_genvex && src === 2) {
+            // Genvex: Frisk udeluft blæses ned fra loftet (1.5, 2.5, -1.2) og hvirvler ud i stuen
+            rPos[idx + 1] -= 0.018; // Falder ned mod opholdszonen
+            rPos[idx + 0] -= 0.008; // Breder sig mod venstre
+            rPos[idx + 2] += 0.012; // Bevæger sig fremad i rummet
+
+            if (rPos[idx + 1] < 0.35 || rPos[idx + 2] > HOUSE_L / 2 - 0.5) {
+              rPos[idx + 0] = 1.5 + (Math.random() - 0.5) * 0.3;
+              rPos[idx + 1] = 2.45;
+              rPos[idx + 2] = -1.2 + (Math.random() - 0.5) * 0.3;
+            }
+          } else if (state.t7_singleRoomVent && src === 1) {
+            // Enkeltrum: Frisk udeluft blæses ind fra vægenheden (-3.2, 1.65, 1.3)
+            rPos[idx + 0] += 0.022; // Strømmer tværs over stuen
+            rPos[idx + 1] += Math.sin(time * 3 + i) * 0.004;
+            rPos[idx + 2] += Math.cos(time * 2 + i) * 0.006;
+
+            if (rPos[idx + 0] > HOUSE_W / 2 - 0.5) {
+              rPos[idx + 0] = -HOUSE_W / 2 + 0.4;
+              rPos[idx + 1] = 1.65 + (Math.random() - 0.5) * 0.2;
+              rPos[idx + 2] = 1.3 + (Math.random() - 0.5) * 0.4;
+            }
+          } else if (state.t6_naturalVent && src === 0) {
+            // Naturlig: Frisk udeluft siver ind fra vinduets overkant og vægventil
+            rPos[idx + 2] += 0.016; // Strømmer frem i rummet
+            rPos[idx + 1] -= 0.006; // Falder roligt ned
+            rPos[idx + 0] += Math.sin(time + i) * 0.005;
+
+            if (rPos[idx + 2] > HOUSE_L / 2 - 0.5 || rPos[idx + 1] < 0.3) {
+              rPos[idx + 0] = (Math.random() - 0.5) * 2.5;
+              rPos[idx + 1] = 1.95;
+              rPos[idx + 2] = -HOUSE_L / 2 + 0.35;
+            }
+          } else {
+            // Fallback for andre partikler: flyd let med i den friske rumluft
+            rPos[idx + 1] += Math.sin(time + i) * 0.003;
+          }
+        }
+        roomAirGeo.attributes.position.needsUpdate = true;
+      }
+
+      // Gentle pulsation of active suction LED
+      if (state.t5_activeSuction) {
+        const pulse = 0.7 + Math.sin(time * 6) * 0.3;
+        matLed.color.setRGB(0.1 * pulse, 0.9 * pulse, 0.4 * pulse);
+      }
+
+      // Render 3D Scene
+      renderer.render(scene, camera);
+
+      // Render responsive real-time history chart
+      drawRadonChart();
+    }
+
+    // Responsive Canvas Resize
+    window.addEventListener('resize', () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    // INITIALIZE APPLICATION
+    window.onload = function () {
+      updateDashboard();
+      animate();
+    };
+  </script>
+</body>
+</html>
